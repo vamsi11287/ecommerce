@@ -60,10 +60,17 @@ const KitchenDisplay = ({ user, onLogout }) => {
             setOrders(prev => prev.filter(order => order._id !== orderId));
         };
 
+        const handleOrderTaken = (data) => {
+            console.log('✅ Order taken:', data.orderId);
+            setOrders(prev => prev.filter(order => order.orderId !== data.orderId));
+            showNotification(`Order ${data.orderId} marked as taken`, 'success');
+        };
+
         socket.on('order:created', handleOrderCreated);
         socket.on('order:status-updated', handleOrderUpdated);
         socket.on('order:ready', handleOrderUpdated);
         socket.on('order:deleted', handleOrderDeleted);
+        socket.on('order:taken', handleOrderTaken);
 
         return () => {
             console.log('🔌 Cleaning up kitchen socket listeners');
@@ -71,6 +78,7 @@ const KitchenDisplay = ({ user, onLogout }) => {
             socket.off('order:status-updated', handleOrderUpdated);
             socket.off('order:ready', handleOrderUpdated);
             socket.off('order:deleted', handleOrderDeleted);
+            socket.off('order:taken', handleOrderTaken);
         };
     }, [socket]);
 

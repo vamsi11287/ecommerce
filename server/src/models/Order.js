@@ -63,8 +63,20 @@ const orderSchema = new mongoose.Schema({
 // Auto-generate order ID before saving
 orderSchema.pre('save', async function(next) {
     if (this.isNew && !this.orderId) {
-        const count = await mongoose.model('Order').countDocuments();
-        this.orderId = `ORD-${String(count + 1).padStart(5, '0')}`;
+        // Find the highest existing order number
+        const lastOrder = await mongoose.model('Order')
+            .findOne({}, { orderId: 1 })
+            .sort({ orderId: -1 })
+            .lean();
+        
+        let nextNumber = 1;
+        if (lastOrder && lastOrder.orderId) {
+            // Extract number from ORD-00001 format
+            const lastNumber = parseInt(lastOrder.orderId.split('-')[1]);
+            nextNumber = lastNumber + 1;
+        }
+        
+        this.orderId = `ORD-${String(nextNumber).padStart(5, '0')}`;
     }
     next();
 });

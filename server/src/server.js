@@ -3,6 +3,8 @@ const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
 const connectDB = require('./config/db');
 const setupSocket = require('./config/socket');
 const errorHandler = require('./middleware/errorHandler');
@@ -12,6 +14,7 @@ const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 const menuRoutes = require('./routes/menu');
 const settingsRoutes = require('./routes/settings');
+const reportRoutes = require('./routes/reports');
 
 require('dotenv').config();
 
@@ -58,11 +61,18 @@ app.get('/health', (req, res) => {
     });
 });
 
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Restaurant Order API Docs'
+}));
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/reports', reportRoutes);
 
 // 404 handler
 app.use((req, res) => {

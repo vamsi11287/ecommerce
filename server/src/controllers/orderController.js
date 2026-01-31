@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const MenuItem = require('../models/MenuItem');
 const Settings = require('../models/Settings');
+const Report = require('../models/Report');
 
 // Create order (Staff or Customer)
 exports.createOrder = async (req, res) => {
@@ -240,6 +241,62 @@ exports.deleteOrder = async (req, res) => {
     }
 };
 
+// Mark order as taken (move to reports)
+exports.markOrderAsTaken = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Find the order
+        const order = await Order.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Order not found' 
+            });
+        }
+
+        // Create report entry from order
+        const report = new Report({
+            orderId: order.orderId,
+            customerName: order.customerName,
+            items: order.items,
+            totalAmount: order.totalAmount,
+            status: order.status,
+            orderType: order.orderType,
+            createdBy: order.createdBy,
+            takenBy: req.user._id,
+            notes: order.notes,
+            originalCreatedAt: order.createdAt,
+            takenAt: new Date()
+        });
+
+        // Save report and delete order in a single operation
+        await report.save();
+        await Order.findByIdAndDelete(id);
+
+        // Emit socket event
+        if (req.app.get('io')) {
+            req.app.get('io').emit('order:taken', { 
+                orderId: id,
+                reportId: report._id 
+            });
+        }
+
+        res.status(200).json({ 
+            success: true,
+            message: 'Order marked as taken and moved to reports',
+            data: report
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            message: 'Error marking order as taken', 
+            error: error.message 
+        });
+    }
+};
+
 // Get orders for ready display (only READY status)
 exports.getReadyOrders = async (req, res) => {
     try {
@@ -359,6 +416,40 @@ exports.getOrderHistory = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Error fetching order history',
+            error: error.message
+        });
+    }
+};
+
+// Permanently delete order (no report saving)
+exports.permanentDeleteOrder = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const order = await Order.findById(id);
+        if (!order) {
+            return res.status(404).json({ 
+                success: false,
+                message: 'Order not found' 
+            });
+        }
+
+        await Order.findByIdAndDelete(id);
+
+        // Emit socket event
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('order:deleted', { orderId: order.orderId });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Order permanently deleted'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting order',
             error: error.message
         });
     }

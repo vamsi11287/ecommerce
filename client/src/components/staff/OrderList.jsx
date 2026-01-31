@@ -15,7 +15,7 @@ const OrderList = ({ orders, onRefresh }) => {
     };
 
     const handleDelete = async (orderId) => {
-        if (window.confirm('Are you sure you want to delete this order?')) {
+        if (window.confirm('Are you sure you want to permanently delete this order? This cannot be undone.')) {
             try {
                 const response = await orderAPI.delete(orderId);
                 console.log('Delete response:', response);
@@ -25,6 +25,21 @@ const OrderList = ({ orders, onRefresh }) => {
                 console.error('Delete error:', error);
                 const errorMsg = error.response?.data?.message || error.message || 'Error deleting order';
                 alert('Error deleting order: ' + errorMsg);
+            }
+        }
+    };
+
+    const handleTaken = async (orderId, orderNumber) => {
+        if (window.confirm(`Mark order ${orderNumber} as taken? It will be moved to reports.`)) {
+            try {
+                const response = await orderAPI.markAsTaken(orderId);
+                console.log('Taken response:', response);
+                if (onRefresh) onRefresh();
+                alert('Order marked as taken and moved to reports');
+            } catch (error) {
+                console.error('Taken error:', error);
+                const errorMsg = error.response?.data?.message || error.message || 'Error marking order as taken';
+                alert('Error: ' + errorMsg);
             }
         }
     };
@@ -75,8 +90,16 @@ const OrderList = ({ orders, onRefresh }) => {
                         </div>
                         <div className="order-actions">
                             <button 
+                                onClick={() => handleTaken(order._id, order.orderId)}
+                                className="btn-success btn-small"
+                                title="Mark as taken and move to reports"
+                            >
+                                ✅ Taken
+                            </button>
+                            <button 
                                 onClick={() => handleDelete(order._id)}
                                 className="btn-danger btn-small"
+                                title="Permanently delete this order"
                             >
                                 🗑️ Delete
                             </button>

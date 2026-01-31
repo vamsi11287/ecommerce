@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { SocketProvider } from './context/SocketContext';
+import { authAPI } from './services/api';
 
 // Auth Components
 import Login from './components/common/Login';
@@ -27,19 +28,28 @@ const App = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for stored user
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
-    if (storedUser && token) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
+    // Check for stored user and verify token
+    const verifyUserToken = async () => {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (storedUser && token) {
+        try {
+          // Verify token is still valid
+          await authAPI.verifyToken();
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          // Token expired or invalid - clear storage
+          console.log('🔒 Token verification failed, logging out');
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+          setUser(null);
+        }
       }
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    verifyUserToken();
   }, []);
 
   const handleLogin = (userData, token) => {

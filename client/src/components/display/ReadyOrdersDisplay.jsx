@@ -57,11 +57,18 @@ const ReadyOrdersDisplay = () => {
             setOrders(prev => prev.filter(order => order._id !== orderId));
         };
 
+        const handleOrderTaken = (data) => {
+            const orderId = data.orderId;
+            console.log('✅ Order taken from Ready Board:', orderId, data);
+            setOrders(prev => prev.filter(order => order._id !== orderId));
+        };
+
         console.log('📡 Registering socket events for Ready Board');
         socket.on('order:created', handleOrderCreated);
         socket.on('order:status-updated', handleOrderUpdated);
         socket.on('order:ready', handleOrderUpdated); // Also listen to ready event
         socket.on('order:deleted', handleOrderDeleted);
+        socket.on('order:taken', handleOrderTaken);
 
         return () => {
             console.log('🔌 Cleaning up socket listeners for Ready Board');
@@ -69,6 +76,7 @@ const ReadyOrdersDisplay = () => {
             socket.off('order:status-updated', handleOrderUpdated);
             socket.off('order:ready', handleOrderUpdated);
             socket.off('order:deleted', handleOrderDeleted);
+            socket.off('order:taken', handleOrderTaken);
         };
     }, [socket]);
 

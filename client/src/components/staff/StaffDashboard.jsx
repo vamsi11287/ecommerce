@@ -5,6 +5,7 @@ import OrderList from './OrderList';
 import OrderHistory from './OrderHistory';
 import StaffManagement from './StaffManagement';
 import MenuManagement from './MenuManagement';
+import ReportsTab from './ReportsTab';
 import Notification from '../common/Notification';
 import { useSocket } from '../../context/SocketContext';
 import { orderAPI, menuAPI, settingsAPI } from '../../services/api';
@@ -67,6 +68,12 @@ const StaffDashboard = ({ user, onLogout }) => {
         socket.onOrderDeleted(({ orderId }) => {
             setOrders(prev => prev.filter(order => order._id !== orderId));
             showNotification('Order deleted', 'info');
+            fetchStats();
+        });
+
+        socket.onOrderTaken((data) => {
+            setOrders(prev => prev.filter(order => order._id !== data.orderId));
+            showNotification('Order marked as taken and moved to reports', 'success');
             fetchStats();
         });
 
@@ -197,6 +204,12 @@ const StaffDashboard = ({ user, onLogout }) => {
                     >
                         🍽️ Menu
                     </button>
+                    <button 
+                        className={activeTab === 'reports' ? 'active' : ''}
+                        onClick={() => setActiveTab('reports')}
+                    >
+                        📊 Reports
+                    </button>
                     {user.role === 'owner' && (
                         <button 
                             className={activeTab === 'history' ? 'active' : ''}
@@ -246,6 +259,10 @@ const StaffDashboard = ({ user, onLogout }) => {
                             orders={orders}
                             onRefresh={fetchInitialData}
                         />
+                    )}
+
+                    {activeTab === 'reports' && (
+                        <ReportsTab />
                     )}
 
                     {activeTab === 'menu' && (

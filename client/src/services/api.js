@@ -30,12 +30,30 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             // Token expired or invalid
+            const errorMessage = error.response?.data?.message || '';
+            console.log('🔒 Authentication failed:', errorMessage);
+            
+            // Clear stored authentication data
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            if (!window.location.pathname.includes('/login') && 
-                !window.location.pathname.includes('/customer')) {
+            
+            // Get current path
+            const currentPath = window.location.pathname;
+            
+            // Don't redirect if already on login or customer pages
+            if (!currentPath.includes('/login') && !currentPath.includes('/customer')) {
+                // Show alert to user
+                alert('Your session has expired. Please login again.');
+                // Redirect to login page
                 window.location.href = '/login';
+            } else if (currentPath.includes('/customer') && !currentPath.startsWith('/customer/order')) {
+                // If on customer portal (not tracking page), just show message
+                console.log('Session expired on customer portal');
             }
+        } else if (error.response?.status === 403) {
+            // Forbidden - insufficient permissions
+            console.log('🚫 Access forbidden');
+            alert('You do not have permission to perform this action.');
         }
         return Promise.reject(error);
     }
@@ -55,9 +73,17 @@ export const orderAPI = {
     getById: (id) => api.get(`/orders/${id}`),
     create: (orderData) => api.post('/orders', orderData),
     updateStatus: (id, status) => api.patch(`/orders/${id}/status`, { status }),
+    markAsTaken: (id) => api.post(`/orders/${id}/taken`),
     delete: (id) => api.delete(`/orders/${id}`),
     getReady: () => api.get('/orders/ready'),
     getStats: () => api.get('/orders/stats')
+};
+
+// Report APIs
+export const reportAPI = {
+    getAll: (params) => api.get('/reports', { params }),
+    getByDate: (date) => api.get(`/reports/date/${date}`),
+    getSummary: (params) => api.get('/reports/summary', { params })
 };
 
 // Menu APIs

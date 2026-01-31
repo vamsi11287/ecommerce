@@ -135,6 +135,20 @@
     flex-shrink: 0;
 }
 
+.order-actions .btn-success {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    flex: 1;
+}
+
+.order-actions .btn-success:hover {
+    background: linear-gradient(135deg, #5568d3 0%, #653a91 100%);
+    transform: translateY(-2px);
+}
+
+.order-actions .btn-danger {
+    flex: 1;
+}
+
 /* Mobile Responsive Styles */
 @media (max-width: 1024px) {
     .orders-grid {

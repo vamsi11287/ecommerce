@@ -113,6 +113,10 @@ class SocketService {
         this.on('order:deleted', callback);
     }
 
+    onOrderTaken(callback) {
+        this.on('order:taken', callback);
+    }
+
     // Menu event helpers
     onMenuItemCreated(callback) {
         this.on('menu:item-created', callback);
